@@ -30,7 +30,7 @@ cleaned as (
         ) as premium_amount,
         lower(trim(status)) as policy_status,
         broker_id,
-        created_at,
+        try_to_timestamp_ntz(to_varchar(created_at)) as created_at,
         datediff('day', trip_start_date, trip_end_date) as trip_duration_days
     from ranked
     where row_num = 1

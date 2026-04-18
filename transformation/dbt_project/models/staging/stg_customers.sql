@@ -45,7 +45,7 @@ cleaned as (
             else 'UN'
         end as country_iso_code,
         trim(phone) as phone,
-        created_at,
+        try_to_timestamp_ntz(to_varchar(created_at)) as created_at,
         trim(first_name) || ' ' || trim(last_name) as full_name
     from ranked
     where row_num = 1

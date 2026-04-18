@@ -27,8 +27,8 @@ cleaned as (
         claim_date,
         lower(trim(status)) as claim_status,
         description,
-        processed_at,
-        created_at,
+        try_to_timestamp_ntz(to_varchar(processed_at)) as processed_at,
+        try_to_timestamp_ntz(to_varchar(created_at)) as created_at,
         case
             when processed_at is null then null
             else datediff(
