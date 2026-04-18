@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-producer-config
+data:
+  KAFKA_FLIGHT_TOPIC: flight-events
+  OPENSKY_API_URL: https://opensky-network.org/api/states/all
+  OPENSKY_POLL_SECONDS: "30"
+  OPENSKY_RETRY_SECONDS: "60"
+  PRODUCER_HEALTH_PORT: "8081"
+  SNOWFLAKE_ACCOUNT: YOUR_SNOWFLAKE_ACCOUNT
+  SNOWFLAKE_USER: YOUR_SNOWFLAKE_USER
+  SNOWFLAKE_DATABASE: TRAVEL_DW
+  SNOWFLAKE_WAREHOUSE: YOUR_SNOWFLAKE_WAREHOUSE
+  SNOWFLAKE_ROLE: YOUR_SNOWFLAKE_ROLE
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-producer
+  labels:
+    app: kafka-producer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kafka-producer
+  template:
+    metadata:
+      labels:
+        app: kafka-producer
+    spec:
+      containers:
+        - name: kafka-producer
+          image: travel-data-platform/kafka-producer:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: kafka-producer-config
+          env:
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                secretKeyRef:
+                  name: travel-secrets
+                  key: KAFKA_BOOTSTRAP_SERVERS
+            - name: SNOWFLAKE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: travel-secrets
+                  key: SNOWFLAKE_PASSWORD
+          ports:
+            - containerPort: 8081
+              name: health
+          resources:
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8081
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3

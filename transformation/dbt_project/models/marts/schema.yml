@@ -1,0 +1,106 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: Dimension containing normalized customer attributes and customer demographic fields.
+    columns:
+      - name: customer_sk
+        description: Surrogate key for customer dimension.
+        tests: [not_null, unique]
+      - name: customer_id
+        description: Natural customer ID from source system.
+      - name: full_name
+        description: Full customer name derived from first and last name.
+      - name: email
+        description: Standardized customer email address.
+      - name: customer_age
+        description: Calculated age in years based on date of birth.
+
+  - name: dim_destinations
+    description: Destination country dimension with mapped continent labels.
+    columns:
+      - name: destination_sk
+        description: Surrogate key for destination country.
+        tests: [not_null, unique]
+      - name: destination_country
+        description: Destination country in uppercase format.
+      - name: continent
+        description: Mapped continent for destination analytics.
+
+  - name: dim_brokers
+    description: Broker dimension describing broker entities and commission profile.
+    columns:
+      - name: broker_sk
+        description: Surrogate key for broker dimension.
+        tests: [not_null, unique]
+      - name: broker_id
+        description: Natural broker identifier from operational system.
+      - name: broker_name
+        description: Broker name.
+      - name: commission_earned
+        description: Latest known commission amount for broker.
+
+  - name: dim_date
+    description: Date spine dimension for 2023-01-01 through 2025-12-31.
+    columns:
+      - name: date_sk
+        description: Surrogate date key.
+        tests: [not_null, unique]
+      - name: date_day
+        description: Calendar date.
+      - name: year
+        description: Calendar year.
+      - name: month
+        description: Calendar month number.
+      - name: quarter
+        description: Calendar quarter.
+      - name: day_of_week
+        description: Day of week represented by Snowflake day number.
+      - name: is_weekend
+        description: True when date is on weekend.
+
+  - name: fact_policies
+    description: Policy fact table with destination, broker, and customer context.
+    columns:
+      - name: policy_id
+        description: Unique policy identifier.
+        tests: [not_null, unique]
+      - name: customer_sk
+        description: Foreign key to dim_customers.
+      - name: destination_sk
+        description: Foreign key to dim_destinations.
+      - name: broker_sk
+        description: Foreign key to dim_brokers.
+      - name: date_sk
+        description: Foreign key to dim_date keyed on trip start date.
+      - name: premium_amount
+        description: Policy premium amount in source currency.
+      - name: coverage_type
+        description: Coverage category of policy.
+      - name: policy_status
+        description: Current policy lifecycle status.
+        tests:
+          - accepted_values:
+              values: ["active", "expired", "cancelled"]
+
+  - name: fact_claims
+    description: Claims fact table enriched with policy destination and broker context.
+    columns:
+      - name: claim_id
+        description: Unique claim identifier.
+        tests: [not_null, unique]
+      - name: policy_id
+        description: Policy identifier tied to each claim.
+        tests:
+          - relationships:
+              to: ref('fact_policies')
+              field: policy_id
+      - name: claim_amount
+        description: Claimed monetary amount.
+        tests:
+          - dbt_utils.expression_is_true:
+              expression: "> 0"
+      - name: claim_status
+        description: Claim adjudication status.
+      - name: is_approved
+        description: Boolean marker for approved claims.

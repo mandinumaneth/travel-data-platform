@@ -1,0 +1,57 @@
+version: 2
+
+sources:
+  - name: bronze
+    description: Raw ingestion layer in Snowflake TRAVEL_DW.BRONZE schema.
+    database: "{{ var('target_database') }}"
+    schema: "{{ var('source_schema') }}"
+    tables:
+      - name: raw_customers
+        identifier: RAW_CUSTOMERS
+        description: Raw customer records extracted from PostgreSQL.
+        loaded_at_field: CREATED_AT
+        freshness:
+          warn_after: { count: 24, period: hour }
+          error_after: { count: 48, period: hour }
+      - name: raw_policies
+        identifier: RAW_POLICIES
+        description: Raw policy records extracted from PostgreSQL.
+        loaded_at_field: CREATED_AT
+        freshness:
+          warn_after: { count: 24, period: hour }
+          error_after: { count: 48, period: hour }
+      - name: raw_claims
+        identifier: RAW_CLAIMS
+        description: Raw claims records extracted from PostgreSQL.
+        loaded_at_field: CREATED_AT
+        freshness:
+          warn_after: { count: 24, period: hour }
+          error_after: { count: 48, period: hour }
+      - name: raw_broker_commissions
+        identifier: RAW_BROKER_COMMISSIONS
+        description: Daily broker commission CSV data loaded to Bronze.
+        loaded_at_field: REPORT_DATE
+        freshness:
+          warn_after: { count: 24, period: hour }
+          error_after: { count: 48, period: hour }
+      - name: raw_flights
+        identifier: RAW_FLIGHTS
+        description: Real-time flight events streamed from Kafka into Snowflake.
+        loaded_at_field: INGESTED_AT
+        freshness:
+          warn_after: { count: 24, period: hour }
+          error_after: { count: 48, period: hour }
+      - name: flight_daily_stats
+        identifier: FLIGHT_DAILY_STATS
+        description: Spark-generated daily aggregate stats for flights.
+        loaded_at_field: FLIGHT_DAY
+        freshness:
+          warn_after: { count: 24, period: hour }
+          error_after: { count: 48, period: hour }
+      - name: bronze_flights_clean
+        identifier: BRONZE_FLIGHTS_CLEAN
+        description: Spark-cleaned flight data in Bronze.
+        loaded_at_field: INGESTED_AT
+        freshness:
+          warn_after: { count: 24, period: hour }
+          error_after: { count: 48, period: hour }

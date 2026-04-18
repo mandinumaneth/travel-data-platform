@@ -1,0 +1,61 @@
+name: dbt CI
+
+on:
+  push:
+    branches: [dev, main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  dbt-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Create dbt profile from secrets
+        run: |
+          mkdir -p ~/.dbt
+          cat > ~/.dbt/profiles.yml << 'EOF'
+          dbt_project:
+            target: ci
+            outputs:
+              ci:
+                type: snowflake
+                account: "${{ secrets.SNOWFLAKE_ACCOUNT }}"
+                user: "${{ secrets.SNOWFLAKE_USER }}"
+                password: "${{ secrets.SNOWFLAKE_PASSWORD }}"
+                role: "${{ secrets.SNOWFLAKE_ROLE }}"
+                database: "${{ secrets.SNOWFLAKE_DATABASE }}"
+                warehouse: "${{ secrets.SNOWFLAKE_WAREHOUSE }}"
+                schema: SILVER
+                threads: 4
+                client_session_keep_alive: false
+          EOF
+
+      - name: Install dbt packages
+        working-directory: transformation/dbt_project
+        run: dbt deps
+
+      - name: Compile dbt project
+        working-directory: transformation/dbt_project
+        run: dbt compile
+
+      - name: Run staging tests
+        working-directory: transformation/dbt_project
+        run: dbt test --select staging
+
+      - name: Run marts tests
+        working-directory: transformation/dbt_project
+        run: dbt test --select marts

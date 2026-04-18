@@ -1,0 +1,55 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python cache and artifacts
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE/editor
+.vscode/
+.idea/
+
+# dbt artifacts
+transformation/dbt_project/target/
+transformation/dbt_project/logs/
+transformation/dbt_project/dbt_packages/
+
+# Spark and Airflow temporary files
+spark-warehouse/
+metastore_db/
+*.lck
+airflow.db
+.orchestration_tmp/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Docker overrides
+infrastructure/docker/docker-compose.override.yml
+
+# Reconciliation outputs
+tests/recon_reports/*.json
