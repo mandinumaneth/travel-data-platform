@@ -35,7 +35,14 @@ def check_source_freshness() -> None:
     try:
         with conn.cursor() as cur:
             cur.execute(query)
-            policies_count, claims_count = cur.fetchone()
+            row = cur.fetchone()
+
+        if row is None:
+            raise AirflowSkipException(
+                "Source freshness query returned no result. Skipping downstream pipeline tasks."
+            )
+
+        policies_count, claims_count = row
 
         if policies_count == 0 and claims_count == 0:
             raise AirflowSkipException(
@@ -108,7 +115,14 @@ with DAG(
 
     run_spark_cleaning_task = BashOperator(
         task_id="run_spark_cleaning",
-        bash_command=f"spark-submit {PROJECT_ROOT}/processing/spark/clean_bronze.py",
+        bash_command=(
+            "export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 && "
+            "export PATH=$JAVA_HOME/bin:$PATH && "
+            "/home/airflow/.local/bin/spark-submit --conf spark.jars.ivy=/tmp/.ivy2 "
+            "--packages net.snowflake:spark-snowflake_2.12:2.15.0-spark_3.4,"
+            "net.snowflake:snowflake-jdbc:3.16.1 "
+            f"{PROJECT_ROOT}/processing/spark/clean_bronze.py"
+        ),
     )
 
     run_dbt_staging_task = BashOperator(

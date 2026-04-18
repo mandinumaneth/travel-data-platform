@@ -5,6 +5,7 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TypedDict
 
 import psycopg2
 import snowflake.connector
@@ -20,6 +21,19 @@ TABLE_MAP = {
     "policies": "TRAVEL_DW.GOLD.FACT_POLICIES",
     "claims": "TRAVEL_DW.GOLD.FACT_CLAIMS",
 }
+
+
+class TableStats(TypedDict):
+    source_count: int
+    destination_count: int
+    difference: int
+    match_percentage: float
+    passed: bool
+
+
+class ReconciliationReport(TypedDict):
+    run_timestamp: str
+    tables: dict[str, TableStats]
 
 
 def pg_connection() -> psycopg2.extensions.connection:
@@ -56,7 +70,7 @@ def main() -> None:
     REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
     run_timestamp = datetime.now(timezone.utc).isoformat()
-    report: dict[str, object] = {
+    report: ReconciliationReport = {
         "run_timestamp": run_timestamp,
         "tables": {},
     }

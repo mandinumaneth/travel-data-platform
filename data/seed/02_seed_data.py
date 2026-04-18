@@ -65,6 +65,11 @@ def get_connection() -> psycopg2.extensions.connection:
     )
 
 
+def reset_existing_data(cur: psycopg2.extensions.cursor) -> None:
+    cur.execute("TRUNCATE TABLE claims, policies, customers RESTART IDENTITY CASCADE")
+    print("Existing seed data cleared (claims, policies, customers).")
+
+
 def random_dob() -> date:
     start = date(1955, 1, 1)
     end = date(2005, 12, 31)
@@ -228,6 +233,10 @@ def main() -> None:
     try:
         with conn:
             with conn.cursor() as cur:
+                should_reset = os.getenv("SEED_RESET", "true").lower() == "true"
+                if should_reset:
+                    reset_existing_data(cur)
+
                 customer_ids = seed_customers(cur, 500)
                 policies = seed_policies(cur, customer_ids, 1500)
                 seed_claims(cur, policies, 800)

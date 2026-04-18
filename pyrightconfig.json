@@ -1,0 +1,14 @@
+{
+  "typeCheckingMode": "basic",
+  "reportMissingImports": "none",
+  "reportMissingModuleSource": "none",
+  "reportUnusedExpression": "none",
+  "reportOptionalSubscript": "none",
+  "reportOptionalIterable": "none",
+  "reportGeneralTypeIssues": "warning",
+  "exclude": [
+    "transformation/dbt_project/dbt_packages",
+    "transformation/dbt_project/target",
+    "transformation/dbt_project/logs"
+  ]
+}

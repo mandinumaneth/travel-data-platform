@@ -29,6 +29,7 @@ env/
 transformation/dbt_project/target/
 transformation/dbt_project/logs/
 transformation/dbt_project/dbt_packages/
+transformation/dbt_project/.dbt/
 
 # Spark and Airflow temporary files
 spark-warehouse/
@@ -53,3 +54,7 @@ infrastructure/docker/docker-compose.override.yml
 
 # Reconciliation outputs
 tests/recon_reports/*.json
+
+# Generated local runtime artifacts
+data/csv_samples/broker_commissions_*.csv
+ingestion/batch/state.json

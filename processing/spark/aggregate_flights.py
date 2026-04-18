@@ -2,19 +2,24 @@ from __future__ import annotations
 
 import os
 
-from dotenv import load_dotenv
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 
-load_dotenv()
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ModuleNotFoundError:
+    pass
 
 
 def build_spark_session(app_name: str) -> SparkSession:
     return (
         SparkSession.builder.appName(app_name)
+        .config("spark.jars.ivy", "/tmp/.ivy2")
         .config(
             "spark.jars.packages",
-            "net.snowflake:spark-snowflake_2.12:2.16.0-spark_3.5,net.snowflake:snowflake-jdbc:3.16.1",
+            "net.snowflake:spark-snowflake_2.12:2.15.0-spark_3.4,net.snowflake:snowflake-jdbc:3.16.1",
         )
         .getOrCreate()
     )

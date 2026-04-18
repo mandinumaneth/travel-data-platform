@@ -1,5 +1,7 @@
 x-airflow-common: &airflow-common
-  image: apache/airflow:2.8.4-python3.11
+  build:
+    context: ../../
+    dockerfile: infrastructure/docker/airflow/Dockerfile
   env_file:
     - ../../.env
   environment:
@@ -7,7 +9,12 @@ x-airflow-common: &airflow-common
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER:-travel_user}:${POSTGRES_PASSWORD:-travel_password}@postgres:5432/${POSTGRES_DB:-travel_db}
     AIRFLOW__CORE__LOAD_EXAMPLES: "false"
     AIRFLOW__WEBSERVER__SECRET_KEY: ${AIRFLOW_WEBSERVER_SECRET_KEY:-change_me}
+    AIRFLOW__WEBSERVER__WORKERS: "1"
+    AIRFLOW__WEBSERVER__WEB_SERVER_MASTER_TIMEOUT: "300"
     AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY:-}
+    PROJECT_ROOT: /opt/airflow/project
+    POSTGRES_HOST: postgres
+    KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     PYTHONPATH: /opt/airflow/project
   volumes:
     - ../../orchestration/dags:/opt/airflow/dags
@@ -40,30 +47,32 @@ services:
       - travel-net
 
   zookeeper:
-    image: bitnami/zookeeper:3.9
+    image: confluentinc/cp-zookeeper:7.6.1
     environment:
-      ALLOW_ANONYMOUS_LOGIN: "yes"
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
       - "2181:2181"
     networks:
       - travel-net
 
   kafka:
-    image: bitnami/kafka:3.7
+    image: confluentinc/cp-kafka:7.6.1
     ports:
       - "9092:9092"
     environment:
-      KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
-      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
-      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_BROKER_ID: 1
-      ALLOW_PLAINTEXT_LISTENER: "yes"
-      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
     depends_on:
       - zookeeper
     healthcheck:
-      test: ["CMD-SHELL", "kafka-topics.sh --bootstrap-server localhost:9092 --list > /dev/null 2>&1"]
+      test: ["CMD-SHELL", "kafka-topics --bootstrap-server localhost:9092 --list > /dev/null 2>&1"]
       interval: 15s
       timeout: 10s
       retries: 10
@@ -104,10 +113,23 @@ services:
         condition: service_completed_successfully
 
   spark-master:
-    image: bitnami/spark:3.5
-    environment:
-      SPARK_MODE: master
-      SPARK_MASTER_WEBUI_PORT: 8080
+    image: apache/spark:3.5.1
+    env_file:
+      - ../../.env
+    working_dir: /workspace
+    volumes:
+      - ../../:/workspace
+    command:
+      [
+        "/opt/spark/bin/spark-class",
+        "org.apache.spark.deploy.master.Master",
+        "--host",
+        "spark-master",
+        "--port",
+        "7077",
+        "--webui-port",
+        "8080"
+      ]
     ports:
       - "8888:8080"
       - "7077:7077"
@@ -115,12 +137,22 @@ services:
       - travel-net
 
   spark-worker:
-    image: bitnami/spark:3.5
-    environment:
-      SPARK_MODE: worker
-      SPARK_MASTER_URL: spark://spark-master:7077
-      SPARK_WORKER_MEMORY: 1G
-      SPARK_WORKER_CORES: 1
+    image: apache/spark:3.5.1
+    env_file:
+      - ../../.env
+    working_dir: /workspace
+    volumes:
+      - ../../:/workspace
+    command:
+      [
+        "/opt/spark/bin/spark-class",
+        "org.apache.spark.deploy.worker.Worker",
+        "spark://spark-master:7077",
+        "--webui-port",
+        "8081"
+      ]
+    ports:
+      - "8081:8081"
     depends_on:
       - spark-master
     networks:
@@ -132,6 +164,8 @@ services:
       dockerfile: ingestion/kafka/Dockerfile
     env_file:
       - ../../.env
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
     depends_on:
       kafka:
         condition: service_healthy
@@ -145,10 +179,14 @@ services:
       dockerfile: ingestion/batch/Dockerfile
     env_file:
       - ../../.env
+    environment:
+      POSTGRES_HOST: postgres
+    volumes:
+      - ../../data:/app/data
     depends_on:
       postgres:
         condition: service_healthy
-    restart: unless-stopped
+    restart: "no"
     networks:
       - travel-net
 
