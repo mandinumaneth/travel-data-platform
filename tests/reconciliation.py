@@ -73,7 +73,9 @@ def main() -> None:
                 destination_count = int(sf_cur.fetchone()[0])
 
                 difference = destination_count - source_count
-                match_percentage = round(calculate_match_percentage(source_count, destination_count), 2)
+                match_percentage = round(
+                    calculate_match_percentage(source_count, destination_count), 2
+                )
                 passed = match_percentage >= THRESHOLD
                 any_failed = any_failed or (not passed)
 
@@ -90,7 +92,9 @@ def main() -> None:
 
     print("\nReconciliation Summary")
     print("=" * 90)
-    print(f"{'TABLE':<15}{'SOURCE':>12}{'DESTINATION':>15}{'DIFF':>12}{'MATCH %':>12}{'PASSED':>12}")
+    print(
+        f"{'TABLE':<15}{'SOURCE':>12}{'DESTINATION':>15}{'DIFF':>12}{'MATCH %':>12}{'PASSED':>12}"
+    )
     print("-" * 90)
 
     for table_name, stats in report["tables"].items():

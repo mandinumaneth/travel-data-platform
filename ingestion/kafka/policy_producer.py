@@ -87,7 +87,9 @@ def main() -> None:
     signal.signal(signal.SIGINT, _shutdown_handler)
     signal.signal(signal.SIGTERM, _shutdown_handler)
 
-    producer = Producer({"bootstrap.servers": os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")})
+    producer = Producer(
+        {"bootstrap.servers": os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")}
+    )
     topic = os.getenv("KAFKA_POLICY_TOPIC", "policy-events")
 
     sent_policy_ids: set[int] = set()
@@ -99,11 +101,15 @@ def main() -> None:
             recent_policies = fetch_recent_policies(pg_conn)
 
             if not recent_policies:
-                logger.info("No policies created in the last hour. Sleeping for 10 seconds.")
+                logger.info(
+                    "No policies created in the last hour. Sleeping for 10 seconds."
+                )
                 time.sleep(10)
                 continue
 
-            unsent = [p for p in recent_policies if p["policy_id"] not in sent_policy_ids]
+            unsent = [
+                p for p in recent_policies if p["policy_id"] not in sent_policy_ids
+            ]
             if not unsent:
                 sent_policy_ids.clear()
                 unsent = recent_policies

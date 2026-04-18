@@ -77,7 +77,11 @@ def normalize_flight(state_row: list[Any]) -> dict[str, Any]:
         "altitude": state_row[7] if len(state_row) > 7 else None,
         "velocity": state_row[9] if len(state_row) > 9 else None,
         "heading": state_row[10] if len(state_row) > 10 else None,
-        "on_ground": bool(state_row[8]) if len(state_row) > 8 and state_row[8] is not None else False,
+        "on_ground": (
+            bool(state_row[8])
+            if len(state_row) > 8 and state_row[8] is not None
+            else False
+        ),
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
@@ -88,7 +92,11 @@ def fetch_flights(api_url: str, timeout: int = 30) -> list[dict[str, Any]]:
     payload = response.json()
 
     states = payload.get("states", [])
-    return [normalize_flight(state_row) for state_row in states if state_row and state_row[0]]
+    return [
+        normalize_flight(state_row)
+        for state_row in states
+        if state_row and state_row[0]
+    ]
 
 
 def main() -> None:
@@ -133,7 +141,9 @@ def main() -> None:
             time.sleep(poll_seconds)
 
         except requests.RequestException as exc:
-            logger.warning("OpenSky API failed: %s. Retrying in %s seconds.", exc, retry_seconds)
+            logger.warning(
+                "OpenSky API failed: %s. Retrying in %s seconds.", exc, retry_seconds
+            )
             time.sleep(retry_seconds)
         except Exception as exc:  # noqa: BLE001
             logger.exception("Unexpected producer error: %s", exc)

@@ -76,7 +76,9 @@ def render_revenue_page() -> None:
             color="TOTAL_PREMIUM",
             color_continuous_scale=BLUE_SCALE,
         )
-        destination_bar.update_layout(xaxis_title="Destination Country", yaxis_title="Total Premium")
+        destination_bar.update_layout(
+            xaxis_title="Destination Country", yaxis_title="Total Premium"
+        )
         st.plotly_chart(destination_bar, use_container_width=True)
 
 
@@ -174,7 +176,9 @@ def render_claims_page() -> None:
             color="AVG_CLAIM_AMOUNT",
             color_continuous_scale=BLUE_SCALE,
         )
-        avg_claim_bar.update_layout(xaxis_title="Destination Country", yaxis_title="Average Claim Amount")
+        avg_claim_bar.update_layout(
+            xaxis_title="Destination Country", yaxis_title="Average Claim Amount"
+        )
         chart_cols[0].plotly_chart(avg_claim_bar, use_container_width=True)
 
     if not approval_df.empty:
@@ -217,10 +221,16 @@ def render_broker_page() -> None:
         st.warning("No broker data available yet.")
         return
 
-    countries = ["All"] + sorted([country for country in brokers_df["COUNTRY"].dropna().unique()])
+    countries = ["All"] + sorted(
+        [country for country in brokers_df["COUNTRY"].dropna().unique()]
+    )
     selected_country = st.sidebar.selectbox("Filter Broker Country", countries)
 
-    filtered_df = brokers_df if selected_country == "All" else brokers_df[brokers_df["COUNTRY"] == selected_country]
+    filtered_df = (
+        brokers_df
+        if selected_country == "All"
+        else brokers_df[brokers_df["COUNTRY"] == selected_country]
+    )
 
     st.dataframe(
         filtered_df,
@@ -329,9 +339,16 @@ def main() -> None:
     st.sidebar.title("Travel Intelligence Platform")
     page = st.sidebar.radio(
         "Navigation",
-        ["Revenue Overview", "Claims Analysis", "Broker Performance", "Flight Intelligence"],
+        [
+            "Revenue Overview",
+            "Claims Analysis",
+            "Broker Performance",
+            "Flight Intelligence",
+        ],
     )
-    st.sidebar.caption(f"Last refreshed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    st.sidebar.caption(
+        f"Last refreshed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+    )
 
     if page == "Revenue Overview":
         render_revenue_page()

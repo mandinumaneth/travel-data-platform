@@ -51,9 +51,7 @@ def main() -> None:
             F.count("*").alias("FLIGHT_COUNT"),
             F.avg("ALTITUDE").alias("AVG_ALTITUDE"),
             F.avg("VELOCITY").alias("AVG_VELOCITY"),
-            (F.avg(F.when(F.col("ON_GROUND") == True, F.lit(1)).otherwise(F.lit(0))) * 100).alias(
-                "PCT_ON_GROUND"
-            ),
+            (F.avg(F.col("ON_GROUND").cast("int")) * 100).alias("PCT_ON_GROUND"),
         )
         .orderBy("FLIGHT_DAY", "ORIGIN_COUNTRY")
     )
@@ -66,7 +64,9 @@ def main() -> None:
         .save()
     )
 
-    print(f"Wrote {stats_df.count()} daily country flight aggregate rows to BRONZE.FLIGHT_DAILY_STATS")
+    print(
+        f"Wrote {stats_df.count()} daily country flight aggregate rows to BRONZE.FLIGHT_DAILY_STATS"
+    )
     spark.stop()
 
 

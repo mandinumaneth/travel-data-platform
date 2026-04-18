@@ -114,8 +114,11 @@ def main() -> None:
                 "loaded": loaded_count,
             }
 
+            extracted_count = summary[source_table]["extracted"]
+            loaded_rows = summary[source_table]["loaded"]
             print(
-                f"Table {source_table}: extracted={summary[source_table]['extracted']} loaded={summary[source_table]['loaded']}"
+                f"Table {source_table}: extracted={extracted_count} "
+                f"loaded={loaded_rows}"
             )
 
         sf_conn.commit()
@@ -127,7 +130,9 @@ def main() -> None:
 
     print("Incremental extraction finished.")
     for table_name, result in summary.items():
-        print(f" - {table_name}: extracted={result['extracted']} loaded={result['loaded']}")
+        print(
+            f" - {table_name}: extracted={result['extracted']} loaded={result['loaded']}"
+        )
 
 
 if __name__ == "__main__":

@@ -36,8 +36,7 @@ def get_snowflake_connection() -> snowflake.connector.SnowflakeConnection:
 
 
 def ensure_table(cur: snowflake.connector.cursor.SnowflakeCursor) -> None:
-    cur.execute(
-        """
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS RAW_BROKER_COMMISSIONS (
             BROKER_ID NUMBER,
             BROKER_NAME STRING,
@@ -49,8 +48,7 @@ def ensure_table(cur: snowflake.connector.cursor.SnowflakeCursor) -> None:
             COMMISSION_EARNED NUMBER(12,2),
             REPORT_DATE DATE
         )
-        """
-    )
+        """)
 
 
 def main() -> None:
@@ -76,7 +74,9 @@ def main() -> None:
 
         conn.commit()
 
-    print(f"Loaded {num_rows} rows from {latest_csv.name} into BRONZE.RAW_BROKER_COMMISSIONS")
+    print(
+        f"Loaded {num_rows} rows from {latest_csv.name} into BRONZE.RAW_BROKER_COMMISSIONS"
+    )
 
 
 if __name__ == "__main__":

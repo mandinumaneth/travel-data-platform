@@ -32,8 +32,7 @@ def create_snowflake_connection() -> snowflake.connector.SnowflakeConnection:
 
 
 def ensure_raw_flights_table(cur: snowflake.connector.cursor.SnowflakeCursor) -> None:
-    cur.execute(
-        """
+    cur.execute("""
         CREATE TABLE IF NOT EXISTS RAW_FLIGHTS (
             ICAO24 STRING,
             CALLSIGN STRING,
@@ -47,8 +46,7 @@ def ensure_raw_flights_table(cur: snowflake.connector.cursor.SnowflakeCursor) ->
             EVENT_TIMESTAMP TIMESTAMP_NTZ,
             INGESTED_AT TIMESTAMP_NTZ
         )
-        """
-    )
+        """)
 
 
 def parse_message(raw_value: bytes) -> tuple[Any, ...] | None:
@@ -104,7 +102,9 @@ def consume_loop() -> None:
     consumer = Consumer(
         {
             "bootstrap.servers": os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092"),
-            "group.id": os.getenv("KAFKA_FLIGHT_CONSUMER_GROUP", "travel-flight-consumer"),
+            "group.id": os.getenv(
+                "KAFKA_FLIGHT_CONSUMER_GROUP", "travel-flight-consumer"
+            ),
             "auto.offset.reset": "earliest",
             "enable.auto.commit": False,
         }
@@ -142,7 +142,10 @@ def consume_loop() -> None:
                 write_batch_to_snowflake(cur, parsed_rows)
                 sf_conn.commit()
                 consumer.commit(asynchronous=False)
-                logger.info("Wrote %s flight events to Snowflake and committed offsets.", len(parsed_rows))
+                logger.info(
+                    "Wrote %s flight events to Snowflake and committed offsets.",
+                    len(parsed_rows),
+                )
 
     except KeyboardInterrupt:
         logger.info("Stopping consumer due to keyboard interrupt.")

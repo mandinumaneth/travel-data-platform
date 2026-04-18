@@ -35,8 +35,15 @@ def snowflake_options() -> dict[str, str]:
     }
 
 
-def read_table(spark: SparkSession, options: dict[str, str], table_name: str) -> DataFrame:
-    return spark.read.format("snowflake").options(**options).option("dbtable", table_name).load()
+def read_table(
+    spark: SparkSession, options: dict[str, str], table_name: str
+) -> DataFrame:
+    return (
+        spark.read.format("snowflake")
+        .options(**options)
+        .option("dbtable", table_name)
+        .load()
+    )
 
 
 def write_table(df: DataFrame, options: dict[str, str], table_name: str) -> None:
@@ -52,10 +59,16 @@ def write_table(df: DataFrame, options: dict[str, str], table_name: str) -> None
 def clean_flights(raw_flights: DataFrame) -> DataFrame:
     flights = raw_flights.withColumn(
         "WINDOW_TS",
-        F.to_timestamp(F.from_unixtime((F.unix_timestamp("EVENT_TIMESTAMP") / 30).cast("long") * 30)),
+        F.to_timestamp(
+            F.from_unixtime(
+                (F.unix_timestamp("EVENT_TIMESTAMP") / 30).cast("long") * 30
+            )
+        ),
     )
 
-    window_spec = Window.partitionBy("ICAO24", "WINDOW_TS").orderBy(F.col("EVENT_TIMESTAMP").desc())
+    window_spec = Window.partitionBy("ICAO24", "WINDOW_TS").orderBy(
+        F.col("EVENT_TIMESTAMP").desc()
+    )
 
     deduped = (
         flights.withColumn("ROW_NUM", F.row_number().over(window_spec))
@@ -67,7 +80,9 @@ def clean_flights(raw_flights: DataFrame) -> DataFrame:
         deduped.filter(F.col("LATITUDE").isNotNull() & F.col("LONGITUDE").isNotNull())
         .withColumn(
             "ON_GROUND",
-            F.when(F.col("ON_GROUND").isin(True, "true", "TRUE", 1), F.lit(True)).otherwise(F.lit(False)),
+            F.when(
+                F.col("ON_GROUND").isin(True, "true", "TRUE", 1), F.lit(True)
+            ).otherwise(F.lit(False)),
         )
         .withColumn("INGESTED_AT", F.current_timestamp())
     )
@@ -76,7 +91,9 @@ def clean_flights(raw_flights: DataFrame) -> DataFrame:
 
 
 def clean_policies(raw_policies: DataFrame) -> DataFrame:
-    window_spec = Window.partitionBy("POLICY_NUMBER").orderBy(F.col("CREATED_AT").desc())
+    window_spec = Window.partitionBy("POLICY_NUMBER").orderBy(
+        F.col("CREATED_AT").desc()
+    )
 
     deduped = (
         raw_policies.withColumn("ROW_NUM", F.row_number().over(window_spec))
@@ -89,7 +106,9 @@ def clean_policies(raw_policies: DataFrame) -> DataFrame:
         if isinstance(field.dataType, StringType):
             cleaned = cleaned.withColumn(field.name, F.trim(F.col(field.name)))
 
-    cleaned = cleaned.withColumn("PREMIUM_AMOUNT", F.col("PREMIUM_AMOUNT").cast(DecimalType(10, 2)))
+    cleaned = cleaned.withColumn(
+        "PREMIUM_AMOUNT", F.col("PREMIUM_AMOUNT").cast(DecimalType(10, 2))
+    )
 
     return cleaned
 
@@ -114,7 +133,9 @@ def main() -> None:
     write_table(cleaned_policies, options, "TRAVEL_DW.BRONZE.BRONZE_POLICIES_CLEAN")
 
     print("Spark cleaning completed.")
-    print(f"RAW_FLIGHTS before={flights_before} after={flights_after} removed={flights_before - flights_after}")
+    print(
+        f"RAW_FLIGHTS before={flights_before} after={flights_after} removed={flights_before - flights_after}"
+    )
     print(
         f"RAW_POLICIES before={policies_before} after={policies_after} removed={policies_before - policies_after}"
     )
