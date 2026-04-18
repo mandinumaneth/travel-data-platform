@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -61,6 +61,16 @@ def main() -> None:
 
     file_name = f"broker_commissions_{date.today().strftime('%Y_%m_%d')}.csv"
     output_path = OUTPUT_DIR / file_name
+
+    if output_path.exists():
+        try:
+            output_path.unlink()
+        except PermissionError:
+            fallback_name = (
+                f"broker_commissions_{date.today().strftime('%Y_%m_%d')}_"
+                f"{datetime.now().strftime('%H%M%S')}.csv"
+            )
+            output_path = OUTPUT_DIR / fallback_name
 
     dataframe.to_csv(output_path, index=False)
     print(f"Generated broker commission file: {output_path}")

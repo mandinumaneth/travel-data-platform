@@ -6,7 +6,8 @@ import os
 import random
 import signal
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
+from decimal import Decimal
 from typing import Any
 
 from confluent_kafka import Producer
@@ -75,6 +76,10 @@ def serialize_policy(policy: dict[str, Any]) -> dict[str, Any]:
     for key, value in policy.items():
         if isinstance(value, datetime):
             serialized[key] = value.isoformat()
+        elif isinstance(value, date):
+            serialized[key] = value.isoformat()
+        elif isinstance(value, Decimal):
+            serialized[key] = float(value)
         else:
             serialized[key] = value
 

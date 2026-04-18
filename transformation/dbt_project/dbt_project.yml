@@ -23,7 +23,7 @@ vars:
 
 models:
   travel_data_platform:
-    +database: "{{ var('target_database') }}"
+    +database: TRAVEL_DW
     staging:
       +materialized: view
       +schema: SILVER

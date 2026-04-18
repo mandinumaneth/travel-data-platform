@@ -3,6 +3,16 @@ with source_data as (
     from {{ source('bronze', 'raw_customers') }}
 ),
 
+ranked as (
+    select
+        *,
+        row_number() over (
+            partition by customer_id
+            order by created_at desc
+        ) as row_num
+    from source_data
+),
+
 cleaned as (
     select
         customer_id,
@@ -37,7 +47,8 @@ cleaned as (
         trim(phone) as phone,
         created_at,
         trim(first_name) || ' ' || trim(last_name) as full_name
-    from source_data
+    from ranked
+    where row_num = 1
 )
 
 select *
